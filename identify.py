@@ -39,30 +39,50 @@ if __name__=="__main__":
 				email=json_data["email"]
 				phone=json_data["phoneNumber"]
 
-
 				# Check if any record already exists with given email and phone
+
 				sql="""
 				SELECT * from Contact where email=%s and phoneNumber=%s
 				"""
 				mycursor.execute(sql,(email,phone,))
+
 				# Fetch rows if exist
 				rows = mycursor.fetchall()
 
 				if rows:
 					pass
 
-				# Check if any record already exists with given email or phone
-				sql="""
-				SELECT * from Contact where email=%s or phoneNumber=%s
+				query1="""
+				SELECT * from Contact where email=%s
 				"""
-				mycursor.execute(sql,(email,phone,))
+				query2="""
+				SELECT * from Contact where phoneNumber=%s
+				"""
+				mycursor.execute(query1,(email,))
+				result1=mycursor.fetchone();
 
-				# Fetch rows if exist
-				rows = mycursor.fetchall()			
+				mycursor.execute(query2,(phone,))
+				result2=mycursor.fetchone();
 
-				if rows:
+				if result2 and not result1:
+					linkedId=result2[2]
+					if(linkedId is None):
+						linkedId=result2[7]
+					sql="""
+					INSERT into Contact(phoneNumber,email,linkedId,linkPrecedence,createdAt,updatedAt) values(%s,%s,%s,%s,%s,%s)
+					"""
+					current_datetime = datetime.now()
+
+					# Convert the datetime object to a string formatted as MySQL DATETIME
+					mysql_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
+					print(f"hello:{linkedId}")
+					mycursor.execute(sql,(phone,email,linkedId,"secondary",mysql_datetime,mysql_datetime,))
+					mydb.commit()
+				elif result1 and not result2:
 					pass
+
 				else:
+					#Create record if if no record with given email or phone exists
 					#Create a datetime object representing the current date and time
 					current_datetime = datetime.now()
 

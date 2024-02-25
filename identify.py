@@ -1,4 +1,4 @@
-from flask import Flask,request
+from flask import Flask,request,jsonify
 import mysql.connector
 from datetime import datetime
 
@@ -26,11 +26,11 @@ def prepareResponse(cursor,db,primary_id):
 	row=cursor.fetchone();
 	cursor.execute(query2,(primary_id,))
 	rows=cursor.fetchall();
-	emails.insert(row[1])
-	phone_numbers.insert(row[0])
+	emails.add(row[1])
+	phone_numbers.add(row[0])
 	for r in rows:
-		emails.insert(r[1])
-		phone_numbers.insert(r[0])
+		emails.add(r[1])
+		phone_numbers.add(r[0])
 		secondaryContactIds.append(r[7])
 	emails=list(emails)
 	phone_numbers=list(phone_numbers)
@@ -40,6 +40,7 @@ def prepareResponse(cursor,db,primary_id):
 	"phoneNumbers":phone_numbers,
 	"secondaryContactIds":secondaryContactIds
 	}
+	response=jsonify({"contact":response_contact})
 	response.status_code=200
 	return response
 
@@ -195,14 +196,14 @@ if __name__=="__main__":
 					mycursor.execute(sql,(phone,email,None,"primary",mysql_datetime,mysql_datetime))
 
 					query="""
-					SELECT id from Contact where email=%s and phone=%s
+					SELECT id from Contact where email=%s and phoneNumber=%s
 					"""
 					mycursor.execute(query,(email,phone,))
 					row=mycursor.fetchone()
 					responseId=row[0]
 					mydb.commit()
 
-				return prepareResponse(mycursor,db,responseId)
+				return prepareResponse(mycursor,mydb,responseId)
 
 		app.run(debug=True,port=PORT)
 

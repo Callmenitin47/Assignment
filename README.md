@@ -7,7 +7,20 @@
     - Flask 3.0.0 (if not installed, use command: `pip install flask`)
     - mysql-connector-python 8.2.0 (if not installed, use command: `pip install mysql-connector-python`)
     - requests `pip install requests`
- 
+
+### Database Table: Contact
+
+| Field          | Type     | Null | Key | Default | Extra          |
+|----------------|----------|------|-----|---------|----------------|
+| id             | int      | NO   | PRI | NULL    | auto_increment |
+| phoneNumber    | text     | YES  |     | NULL    |                |
+| email          | text     | YES  |     | NULL    |                |
+| linkedId       | int      | YES  |     | NULL    |                |
+| linkPrecedence | text     | YES  |     | NULL    |                |
+| createdAt      | datetime | YES  |     | NULL    |                |
+| updatedAt      | datetime | YES  |     | NULL    |                |
+| deletedAt      | datetime | YES  |     | NULL    |                |
+
 ## Steps to run server locally
 
 1. Open MySQL command line client or any other MySQL tool and create a database named `mydb`.

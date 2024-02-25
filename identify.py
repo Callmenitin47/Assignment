@@ -4,6 +4,8 @@ from datetime import datetime
 
 PORT=5999
 app=Flask(__name__)
+mydb= None
+mycursor= None
 
 # Connection parameters of MySQL database
 hostname="localhost"
@@ -151,9 +153,22 @@ if __name__=="__main__":
 
 		@app.route('/identify',methods = ["GET","POST"])
 		def getIdentity():
+			global mydb
+			global mycursor
 			if request.method=="GET":
 				return "Invalid request"
 			elif request.method=="POST":
+
+				# Checking if connection to MySQL exists
+				if not mydb.is_connected() or mydb is None:
+					mydb = mysql.connector.connect(
+					host=hostname,
+					user=username,
+					password=password,
+					database=database
+					 )
+					mycursor=mydb.cursor()
+
 				json_data=request.json
 				email=json_data["email"]
 				phone=json_data["phoneNumber"]

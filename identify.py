@@ -81,13 +81,17 @@ def updateRecord(cursor,db,result1,result2,phone,email):
 
 	current_datetime = datetime.now()
 	mysql_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
+	query="""
+	UPDATE Contact set updatedAt=%s,linkedId=%s,linkPrecedence=%s where id=%s
+	"""
+	update_query="""
+	UPDATE Contact set linkedId=%s,updatedAt=%s where linkedId=%s
+	"""
 
 	if precedence1=="primary" and precedence2=="secondary":
-		query="""
-		UPDATE Contact set updatedAt=%s,linkedId=%s,linkPrecedence=%s where id=%s
-		"""
 		if(linkedId2<Id1):
 			cursor.execute(query,(mysql_datetime,linkedId2,"secondary",Id1))
+			cursor.execute(update_query,(linkedId2,mysql_datetime,Id1))
 			db.commit()
 			return linkedId2
 		else:
@@ -96,11 +100,9 @@ def updateRecord(cursor,db,result1,result2,phone,email):
 			db.commit()
 			return Id1
 	elif precedence2=="primary" and precedence1=="secondary":
-		query="""
-		UPDATE Contact set updatedAt=%s,linkedId=%s,linkPrecedence=%s where id=%s
-		"""
 		if(linkedId1<Id2):
 			cursor.execute(query,(mysql_datetime,linkedId1,"secondary",Id2))
+			cursor.execute(update_query,(linkedId1,mysql_datetime,Id2))
 			db.commit()
 			return linkedId1
 		else:
@@ -109,9 +111,6 @@ def updateRecord(cursor,db,result1,result2,phone,email):
 			db.commit()
 			return Id2
 	elif precedence1=="secondary" and precedence2=="secondary":
-		query="""
-		UPDATE Contact set updatedAt=%s,linkedId=%s,linkPrecedence=%s where id=%s
-		"""
 		if(linkedId1<linkedId2):
 			cursor.execute(query,(mysql_datetime,linkedId1,"secondary",linkedId2))
 			cursor.execute(query,(mysql_datetime,linkedId1,"secondary",Id2))
@@ -123,15 +122,14 @@ def updateRecord(cursor,db,result1,result2,phone,email):
 			db.commit()
 			return linkedId2
 	else:
-		query="""
-		UPDATE Contact set updatedAt=%s,linkedId=%s,linkPrecedence=%s where id=%s
-		"""
 		if Id1<Id2:
 			cursor.execute(query,(mysql_datetime,Id1,"secondary",Id2))
+			cursor.execute(update_query,(Id1,mysql_datetime,Id2))
 			db.commit()
 			return Id1
 		else:
 			cursor.execute(query,(mysql_datetime,Id2,"secondary",Id1))
+			cursor.execute(update_query,(Id2,mysql_datetime,Id1))
 			db.commit()
 			return Id2
 

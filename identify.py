@@ -188,7 +188,10 @@ if __name__=="__main__":
 
 				#If yes return the response
 				if rows:
-					return prepareResponse(mycursor,mydb,rows[0])
+					if rows[3] is None:
+						return prepareResponse(mycursor,mydb,rows[0])
+					else:
+						return prepareResponse(mycursor,mydb,rows[3])
 
 				query1="""
 				SELECT * from Contact where email=%s

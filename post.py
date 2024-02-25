@@ -5,8 +5,8 @@ import json
 PORT=5999
 
 #Data to be sent through POST
-email=""
-phone=""
+email="nklucky19e3r95@gmail.com"
+phone="858829"
 
 post_data={"email":email,"phoneNumber":phone}
 json_data = json.dumps(post_data)

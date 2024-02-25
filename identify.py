@@ -17,10 +17,10 @@ def prepareResponse(cursor,db,primary_id):
 	secondaryContactIds=[]
 
 	query1="""
-	SELECT * from contact where id=%s
+	SELECT * from Contact where id=%s
 	"""
 	query2="""
-	SELECT * from contact where linkedId=%s order by id ASC
+	SELECT * from Contact where linkedId=%s order by id ASC
 	"""
 	cursor.execute(query1,(primary_id,))
 	row=cursor.fetchone();
@@ -82,7 +82,7 @@ def updateRecord(cursor,db,result1,result2,phone,email):
 
 	if precedence1=="primary" and precedence2=="secondary":
 		query="""
-		UPDATE contact set updatedAt=%s,linkedId=%s,linkPrecedence=%s where id=%s
+		UPDATE Contact set updatedAt=%s,linkedId=%s,linkPrecedence=%s where id=%s
 		"""
 		if(linkedId2<Id1):
 			cursor.execute(query,(mysql_datetime,linkedId2,"secondary",Id1))
@@ -95,7 +95,7 @@ def updateRecord(cursor,db,result1,result2,phone,email):
 			return Id1
 	elif precedence2=="primary" and precedence1=="secondary":
 		query="""
-		UPDATE contact set updatedAt=%s,linkedId=%s,linkPrecedence=%s where id=%s
+		UPDATE Contact set updatedAt=%s,linkedId=%s,linkPrecedence=%s where id=%s
 		"""
 		if(linkedId1<Id2):
 			cursor.execute(query,(mysql_datetime,linkedId1,"secondary",Id2))
@@ -108,7 +108,7 @@ def updateRecord(cursor,db,result1,result2,phone,email):
 			return Id2
 	elif precedence1=="secondary" and precedence2=="secondary":
 		query="""
-		UPDATE contact set updatedAt=%s,linkedId=%s,linkPrecedence=%s where id=%s
+		UPDATE Contact set updatedAt=%s,linkedId=%s,linkPrecedence=%s where id=%s
 		"""
 		if(linkedId1<linkedId2):
 			cursor.execute(query,(mysql_datetime,linkedId1,"secondary",linkedId2))
@@ -122,7 +122,7 @@ def updateRecord(cursor,db,result1,result2,phone,email):
 			return linkedId2
 	else:
 		query="""
-		UPDATE contact set updatedAt=%s,linkedId=%s,linkPrecedence=%s where id=%s
+		UPDATE Contact set updatedAt=%s,linkedId=%s,linkPrecedence=%s where id=%s
 		"""
 		if Id1<Id2:
 			cursor.execute(query,(mysql_datetime,Id1,"secondary",Id2))

@@ -87,7 +87,6 @@ def updateRecord(cursor,db,result1,result2,phone,email):
 	update_query="""
 	UPDATE Contact set linkedId=%s,updatedAt=%s where linkedId=%s
 	"""
-
 	if precedence1=="primary" and precedence2=="secondary":
 		if(linkedId2<Id1):
 			cursor.execute(query,(mysql_datetime,linkedId2,"secondary",Id1))
@@ -95,8 +94,8 @@ def updateRecord(cursor,db,result1,result2,phone,email):
 			db.commit()
 			return linkedId2
 		else:
+			cursor.execute(update_query,(Id1,mysql_datetime,linkedId2))
 			cursor.execute(query,(mysql_datetime,Id1,"secondary",linkedId2))
-			cursor.execute(query,(mysql_datetime,Id1,"secondary",Id2))
 			db.commit()
 			return Id1
 	elif precedence2=="primary" and precedence1=="secondary":
@@ -106,8 +105,8 @@ def updateRecord(cursor,db,result1,result2,phone,email):
 			db.commit()
 			return linkedId1
 		else:
+			cursor.execute(update_query,(Id2,mysql_datetime,linkedId1))
 			cursor.execute(query,(mysql_datetime,Id2,"secondary",linkedId1))
-			cursor.execute(query,(mysql_datetime,Id2,"secondary",Id1))
 			db.commit()
 			return Id2
 	elif precedence1=="secondary" and precedence2=="secondary":

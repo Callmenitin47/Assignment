@@ -15,6 +15,21 @@ database="mydb"
 def prepareResponse():
 	pass
 
+def insertRecord(cursor,db,result,phone,email,precedence):
+	linkedId=result[2]
+	if(linkedId is None):
+		linkedId=result2[7]
+	sql="""
+		INSERT into Contact(phoneNumber,email,linkedId,linkPrecedence,createdAt,updatedAt) values(%s,%s,%s,%s,%s,%s)
+		"""
+	current_datetime = datetime.now()
+
+	# Convert the datetime object to a string formatted as MySQL DATETIME
+	mysql_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
+					
+	cursor.execute(sql,(phone,email,linkedId,precedence,mysql_datetime,mysql_datetime,))
+	db.commit()
+
 if __name__=="__main__":
 	try:
 		 # Establish a connection to the MySQL database
@@ -64,23 +79,12 @@ if __name__=="__main__":
 				mycursor.execute(query2,(phone,))
 				result2=mycursor.fetchone();
 
+				values=[]
+
 				if result2 and not result1:
-					linkedId=result2[2]
-					if(linkedId is None):
-						linkedId=result2[7]
-					sql="""
-					INSERT into Contact(phoneNumber,email,linkedId,linkPrecedence,createdAt,updatedAt) values(%s,%s,%s,%s,%s,%s)
-					"""
-					current_datetime = datetime.now()
-
-					# Convert the datetime object to a string formatted as MySQL DATETIME
-					mysql_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
-					print(f"hello:{linkedId}")
-					mycursor.execute(sql,(phone,email,linkedId,"secondary",mysql_datetime,mysql_datetime,))
-					mydb.commit()
+					insertRecord(mycursor,mydb,result2,phone,email,"secondary")
 				elif result1 and not result2:
-					pass
-
+					insertRecord(mycursor,mydb,result1,phone,email,"secondary")
 				else:
 					#Create record if if no record with given email or phone exists
 					#Create a datetime object representing the current date and time
@@ -90,9 +94,9 @@ if __name__=="__main__":
 					mysql_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
 
 					sql="""
-					INSERT into Contact(phoneNumber,email,linkPrecedence,createdAt,updatedAt ) values(%s,%s,%s,%s,%s)
+					INSERT into Contact(phoneNumber,email,linkedId,linkPrecedence,createdAt,updatedAt ) values(%s,%s,%s,%s,%s,%s)
 					"""
-					mycursor.execute(sql,(phone,email,"primary",mysql_datetime,mysql_datetime))
+					mycursor.execute(sql,(phone,email,None,"primary",mysql_datetime,mysql_datetime))
 					mydb.commit()
 
 		app.run(debug=True,port=PORT)

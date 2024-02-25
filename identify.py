@@ -2,9 +2,8 @@ from flask import Flask,request,jsonify
 import mysql.connector
 from datetime import datetime
 
-
 PORT=5999
-app = Flask(__name__)
+app=Flask(__name__)
 
 # Connection parameters of MySQL database
 hostname="localhost"
@@ -16,61 +15,67 @@ def prepareResponse(cursor,db,primary_id):
 	emails=set()
 	phone_numbers=set()
 	secondaryContactIds=[]
+
 	query1="""
 	SELECT * from contact where id=%s
 	"""
 	query2="""
-	SELECT * from contact where linkedId=%s
+	SELECT * from contact where linkedId=%s order by id ASC
 	"""
 	cursor.execute(query1,(primary_id,))
 	row=cursor.fetchone();
 	cursor.execute(query2,(primary_id,))
 	rows=cursor.fetchall();
-	emails.add(row[1])
-	phone_numbers.add(row[0])
+	emails.add(row[2])
+	phone_numbers.add(row[1])
+
 	for r in rows:
-		emails.add(r[1])
-		phone_numbers.add(r[0])
-		secondaryContactIds.append(r[7])
+		emails.add(r[2])
+		phone_numbers.add(r[1])
+		secondaryContactIds.append(r[0])
 	emails=list(emails)
 	phone_numbers=list(phone_numbers)
+
 	response_contact={
-	"primaryContatctId": primary_id,
+	"primaryContactId": primary_id,
 	"emails":emails,
 	"phoneNumbers":phone_numbers,
 	"secondaryContactIds":secondaryContactIds
 	}
 	response=jsonify({"contact":response_contact})
 	response.status_code=200
-	return response
-
-	
+	return response	
 
 def insertRecord(cursor,db,result,phone,email,precedence):
-	linkedId=result[2]
+
+	linkedId=result[3]
 	if(linkedId is None):
-		linkedId=result[7]
+		linkedId=result[0]
 	query="""
 		INSERT into Contact(phoneNumber,email,linkedId,linkPrecedence,createdAt,updatedAt) values(%s,%s,%s,%s,%s,%s)
 		"""
 	current_datetime = datetime.now()
+	mysql_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S')	
 
-	# Convert the datetime object to a string formatted as MySQL DATETIME
-	mysql_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
-					
 	cursor.execute(query,(phone,email,linkedId,precedence,mysql_datetime,mysql_datetime,))
 	db.commit()
 
 	return linkedId
 
-
 def updateRecord(cursor,db,result1,result2,phone,email):
-	precedence1=result1[3]
-	precedence2=result2[3]
-	Id1=result1[7]
-	Id2=result2[7]
-	linkedId1=result1[2]
-	linkedId2=result2[2]
+
+	precedence1=result1[4]
+	precedence2=result2[4]
+	Id1=result1[0]
+	Id2=result2[0]
+	linkedId1=result1[3]
+	linkedId2=result2[3]
+
+	# Checking if phone and email are already linked
+	if(linkedId1==Id2): 
+		return Id2
+	if(linkedId2==Id1):
+		return Id1
 
 	current_datetime = datetime.now()
 	mysql_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
@@ -152,6 +157,8 @@ if __name__=="__main__":
 				json_data=request.json
 				email=json_data["email"]
 				phone=json_data["phoneNumber"]
+
+				# To be used as primary contact Id
 				responseId=-1
 
 				# Check if any record already exists with given email and phone
@@ -164,8 +171,9 @@ if __name__=="__main__":
 				# Fetch rows if exist
 				rows = mycursor.fetchone()
 
+				#If yes return the response
 				if rows:
-					return prepareResponse(mycursor,mydb,rows[7])
+					return prepareResponse(mycursor,mydb,rows[0])
 
 				query1="""
 				SELECT * from Contact where email=%s
@@ -174,23 +182,21 @@ if __name__=="__main__":
 				SELECT * from Contact where phoneNumber=%s
 				"""
 				mycursor.execute(query1,(email,))
-				result1=mycursor.fetchone();
+				result1=mycursor.fetchall();
 
 				mycursor.execute(query2,(phone,))
-				result2=mycursor.fetchone();
+				result2=mycursor.fetchall();
 
 				if result2 and not result1:
-					responseId=insertRecord(mycursor,mydb,result2,phone,email,"secondary")
+					responseId=insertRecord(mycursor,mydb,result2[0],phone,email,"secondary")
 				elif result1 and not result2:
-					responseId=insertRecord(mycursor,mydb,result1,phone,email,"secondary")
+					responseId=insertRecord(mycursor,mydb,result1[0],phone,email,"secondary")
 				elif result1 and result2:
-					responseId=updateRecord(mycursor,mydb,result1,result2,phone,email)
+					responseId=updateRecord(mycursor,mydb,result1[0],result2[0],phone,email)
 				else:
 					#Create record if if no record with given email or phone exists
-					#Create a datetime object representing the current date and time
-					current_datetime = datetime.now()
 
-					# Convert the datetime object to a string formatted as MySQL DATETIME
+					current_datetime = datetime.now()
 					mysql_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
 
 					sql="""

@@ -12,14 +12,44 @@ username="root"
 password="root"
 database="mydb"
 
-def prepareResponse():
-	pass
+def prepareResponse(cursor,db,primary_id):
+	emails=set()
+	phone_numbers=set()
+	secondaryContactIds=[]
+	query1="""
+	SELECT * from contact where id=%s
+	"""
+	query2="""
+	SELECT * from contact where linkedId=%s
+	"""
+	cursor.execute(query1,(primary_id,))
+	row=cursor.fetchone();
+	cursor.execute(query2,(primary_id,))
+	rows=cursor.fetchall();
+	emails.insert(row[1])
+	phone_numbers.insert(row[0])
+	for r in rows:
+		emails.insert(r[1])
+		phone_numbers.insert(r[0])
+		secondaryContactIds.append(r[7])
+	emails=list(emails)
+	phone_numbers=list(phone_numbers)
+	response_contact={
+	"primaryContatctId": primary_id,
+	"emails":emails,
+	"phoneNumbers":phone_numbers,
+	"secondaryContactIds":secondaryContactIds
+	}
+	response.status_code=200
+	return response
+
+	
 
 def insertRecord(cursor,db,result,phone,email,precedence):
 	linkedId=result[2]
 	if(linkedId is None):
 		linkedId=result2[7]
-	sql="""
+	query="""
 		INSERT into Contact(phoneNumber,email,linkedId,linkPrecedence,createdAt,updatedAt) values(%s,%s,%s,%s,%s,%s)
 		"""
 	current_datetime = datetime.now()
@@ -27,7 +57,7 @@ def insertRecord(cursor,db,result,phone,email,precedence):
 	# Convert the datetime object to a string formatted as MySQL DATETIME
 	mysql_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
 					
-	cursor.execute(sql,(phone,email,linkedId,precedence,mysql_datetime,mysql_datetime,))
+	cursor.execute(query,(phone,email,linkedId,precedence,mysql_datetime,mysql_datetime,))
 	db.commit()
 
 def updateRecord(cursor,db,result1,result2,phone,email):
@@ -48,10 +78,12 @@ def updateRecord(cursor,db,result1,result2,phone,email):
 		if(linkedId2>Id1):
 			cursor.execute(query,(mysql_datetime,linkedId2,"secondary",Id1))
 			db.commit()
+			return linkedId2
 		else:
 			cursor.execute(query,(mysql_datetime,Id1,"secondary",linkedId2))
 			cursor.execute(query,(mysql_datetime,Id1,"secondary",Id2))
 			db.commit()
+			return Id1
 	elif precedence2=="primary" and precedence1=="secondary":
 		query="""
 		UPDATE contact set updatedAt=%s,linkedId=%s,linkPrecedence=%s where id=%s
@@ -59,10 +91,12 @@ def updateRecord(cursor,db,result1,result2,phone,email):
 		if(linkedId1>Id2):
 			cursor.execute(query,(mysql_datetime,linkedId1,"secondary",Id2))
 			db.commit()
+			return linkedId1
 		else:
 			cursor.execute(query,(mysql_datetime,Id2,"secondary",linkedId1))
 			cursor.execute(query,(mysql_datetime,Id2,"secondary",Id1))
 			db.commit()
+			return Id2
 	elif precedence1=="secondary" and precedence2=="secondary":
 		query="""
 		UPDATE contact set updatedAt=%s,linkedId=%s,linkPrecedence=%s where id=%s
@@ -71,10 +105,12 @@ def updateRecord(cursor,db,result1,result2,phone,email):
 			cursor.execute(query,(mysql_datetime,linkedId1,"secondary",linkedId2))
 			cursor.execute(query,(mysql_datetime,linkedId1,"secondary",Id2))
 			db.commit()
+			return linkedId1
 		else:
 			cursor.execute(query,(mysql_datetime,linkedId2,"secondary",linkedId1))
 			cursor.execute(query,(mysql_datetime,linkedId2,"secondary",Id1))
 			db.commit()
+			return linkedId2
 	else:
 		query="""
 		UPDATE contact set updatedAt=%s,linkedId=%s,linkPrecedence=%s where id=%s
@@ -82,11 +118,11 @@ def updateRecord(cursor,db,result1,result2,phone,email):
 		if Id1>Id2:
 			cursor.execute(query,(mysql_datetime,Id1,"secondary",Id2))
 			db.commit()
+			return Id1
 		else:
 			cursor.execute(query,(mysql_datetime,Id2,"secondary",Id1))
 			db.commit()
-
-
+			return Id2
 
 
 if __name__=="__main__":
@@ -112,6 +148,7 @@ if __name__=="__main__":
 				json_data=request.json
 				email=json_data["email"]
 				phone=json_data["phoneNumber"]
+				responseId=-1
 
 				# Check if any record already exists with given email and phone
 
@@ -121,10 +158,10 @@ if __name__=="__main__":
 				mycursor.execute(sql,(email,phone,))
 
 				# Fetch rows if exist
-				rows = mycursor.fetchall()
+				rows = mycursor.fetchone()
 
 				if rows:
-					pass
+					return prepareResponse(mycursor,mydb,rows[7])
 
 				query1="""
 				SELECT * from Contact where email=%s
@@ -139,11 +176,11 @@ if __name__=="__main__":
 				result2=mycursor.fetchone();
 
 				if result2 and not result1:
-					insertRecord(mycursor,mydb,result2,phone,email,"secondary")
+					responseId=insertRecord(mycursor,mydb,result2,phone,email,"secondary")
 				elif result1 and not result2:
-					insertRecord(mycursor,mydb,result1,phone,email,"secondary")
+					responseId=insertRecord(mycursor,mydb,result1,phone,email,"secondary")
 				elif result1 and result2:
-					updateRecord(mycursor,mydb,result1,result2,phone,email)
+					responseId=updateRecord(mycursor,mydb,result1,result2,phone,email)
 				else:
 					#Create record if if no record with given email or phone exists
 					#Create a datetime object representing the current date and time
@@ -156,7 +193,16 @@ if __name__=="__main__":
 					INSERT into Contact(phoneNumber,email,linkedId,linkPrecedence,createdAt,updatedAt ) values(%s,%s,%s,%s,%s,%s)
 					"""
 					mycursor.execute(sql,(phone,email,None,"primary",mysql_datetime,mysql_datetime))
+
+					query="""
+					SELECT id from Contact where email=%s and phone=%s
+					"""
+					mycursor.execute(query,(email,phone,))
+					row=mycursor.fetchone()
+					responseId=row[0]
 					mydb.commit()
+
+				return prepareResponse(mycursor,db,responseId)
 
 		app.run(debug=True,port=PORT)
 

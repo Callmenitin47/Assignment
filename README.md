@@ -33,7 +33,7 @@
 
 ## Steps to send POST requests to server hosted remotely
 
-1. Inorder to send POST data to remote server, change values of variable on lines 4 and 4 in `post_remote.py` file.
+1. Inorder to send POST data to remote server, change values of variable on lines 4 and 5 in `post_remote.py` file.
 2. Run `post_remote.py`: `python post_remote.py`.
 3. JSON response will be displayed on terminal.
 4. You can also create your own code to send POST requests to hosted app.

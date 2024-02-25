@@ -5,7 +5,7 @@ import json
 PORT=5999
 
 #Data to be sent through POST
-email="nklucky19e3r95@gmail.com"
+email="xyz@gmail.com"
 phone="858829"
 
 post_data={"email":email,"phoneNumber":phone}
@@ -19,3 +19,5 @@ headers={'Content-Type':'application/json'}
 
 #Response
 response=requests.post(URL,data=json_data,headers=headers)
+
+print(response.text)

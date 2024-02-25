@@ -49,7 +49,7 @@ def prepareResponse(cursor,db,primary_id):
 def insertRecord(cursor,db,result,phone,email,precedence):
 	linkedId=result[2]
 	if(linkedId is None):
-		linkedId=result2[7]
+		linkedId=result[7]
 	query="""
 		INSERT into Contact(phoneNumber,email,linkedId,linkPrecedence,createdAt,updatedAt) values(%s,%s,%s,%s,%s,%s)
 		"""
@@ -60,6 +60,9 @@ def insertRecord(cursor,db,result,phone,email,precedence):
 					
 	cursor.execute(query,(phone,email,linkedId,precedence,mysql_datetime,mysql_datetime,))
 	db.commit()
+
+	return linkedId
+
 
 def updateRecord(cursor,db,result1,result2,phone,email):
 	precedence1=result1[3]
